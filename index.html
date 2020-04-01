@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8" />
+		<title></title>
+		<link rel="stylesheet" href="layui/css/layui.css" />
+	</head>
+
+	<body>
+		<div id="test1"></div>
+		<script type="text/html" id="toolbarDemo">
+    <div class="layui-btn-group">
+        <button class="layui-btn layui-btn-sm" lay-event="delete"><i class="layui-icon">&#xe640;</i>删除</button>
+        <button class="layui-btn layui-btn-sm" lay-event="refresh"><i class="layui-icon">&#xe666;</i>刷新</button>
+    </div>
+</script>
+		<table class="layui-hide" id="menu" lay-filter="menu"></table>
+		
+		<script src="layui/layui.all.js"></script>
+		<script>
+			layui.config({
+				base: 'layui/'
+			}).extend({
+				treetable: 'treetable-lay/treetable'  // layui/treetable-lay/treetable.js&css
+			});
+			layui.use(['treetable', 'table', 'layer'], function () {
+        var table = layui.table;
+        var layer = layui.layer;
+        var treetable = layui.treetable;
+        //渲染表格
+        var renderTable = function(){
+            layer.load(2);  //加载层
+            treetable.render({
+            	height: 'full-160',
+                id:'menu',
+                treeColIndex: 1,	//树形图标显示在第几列
+                treeSpid: '0',		//最上级的父级id
+                treeIdName: 'id',	//id字段的名称
+                treePidName: 'parentId',	//pid字段的名称，父级菜单id
+                treeDefaultClose: false,	//是否默认折叠
+                treeLinkage: false,		//父级展开时是否自动展开所有子级
+                elem: '#menu',	//表格id
+                url: 'http://127.0.0.1:8080/sys/permission/MenuAll',
+                toolbar: '#toolbarDemo',
+                page: false,
+                cols: [ [
+                    {type:'radio'},
+                    {field: 'name', title: '菜单名称'},
+                    {field: 'href' , title: '地址'},
+                    {field: 'icon' , hide : true, title: '图标'},
+                    {field: 'sort', title: '排序'}
+                ] ],
+                //数据渲染完的回调
+                done: function () {
+                    //关闭加载
+                    layer.closeAll('loading');
+                }
+            })
+        };
+        renderTable();
+ 
+        table.on('toolbar(menu)', function(obj){
+            var checkStatus = table.checkStatus('menu');
+            var data = checkStatus.data;
+            if(obj.event === "delete"){
+                if(data.length != 1){
+                    layer.msg("请选择一行进行删除",{offset:'rb'});
+                }else{
+                    var id = data[0].id;
+                    console.log("准备删除的id:"+id)
+                    layer.confirm('确定删除选定行的数据吗?', function(index){
+                        $.post('menu/delete',{id:id},function(result){  //menu/delete为删除接口
+                            if(result.success){
+                                layer.close(index);
+                                renderTable();
+                            }
+                            layer.msg(result.msg,{offset:'rb'});
+                        });
+                    });
+                }
+            }else if(obj.event === "refresh"){
+                renderTable();
+            }
+        })
+    })
+		</script>
+	</body>
+
+</html>
